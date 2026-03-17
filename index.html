@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Resume Matcher</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+}
+
+body {
+  height: 100vh;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Animated background blobs */
+.blob {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  background: #00c6ff;
+  filter: blur(120px);
+  animation: move 10s infinite alternate;
+}
+
+.blob:nth-child(2) {
+  background: #ff00cc;
+  animation-delay: 3s;
+}
+
+@keyframes move {
+  from { transform: translate(-100px, -100px); }
+  to { transform: translate(200px, 200px); }
+}
+
+/* Card */
+.card {
+  position: relative;
+  width: 380px;
+  padding: 30px;
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+  background: rgba(255,255,255,0.08);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+  text-align: center;
+  color: white;
+  z-index: 10;
+  animation: fadeIn 1s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(30px);}
+  to { opacity: 1; transform: translateY(0);}
+}
+
+h2 {
+  margin-bottom: 10px;
+}
+
+p {
+  font-size: 14px;
+  opacity: 0.7;
+  margin-bottom: 20px;
+}
+
+/* Input */
+input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  margin-bottom: 15px;
+}
+
+/* Drag & Drop */
+.drop-zone {
+  border: 2px dashed rgba(255,255,255,0.4);
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.drop-zone.dragover {
+  background: rgba(255,255,255,0.1);
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  transform: scale(1.05);
+}
+
+/* Status */
+.status {
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+/* Loader */
+.loader {
+  display: none;
+  margin-top: 10px;
+}
+
+.loader div {
+  width: 8px;
+  height: 8px;
+  background: white;
+  margin: 3px;
+  border-radius: 50%;
+  display: inline-block;
+  animation: bounce 1.2s infinite;
+}
+
+.loader div:nth-child(2) { animation-delay: 0.2s; }
+.loader div:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="blob"></div>
+<div class="blob"></div>
+
+<div class="card">
+  <h2>🚀 AI Resume Matcher</h2>
+  <p>Upload your resume and get matched jobs instantly</p>
+
+  <input type="email" id="email" placeholder="Enter your email">
+
+  <div class="drop-zone" id="dropZone">
+    Drag & Drop Resume or Click
+    <input type="file" id="fileInput" hidden>
+  </div>
+
+  <button onclick="upload()">Analyze Resume</button>
+
+  <div class="loader" id="loader">
+    <div></div><div></div><div></div>
+  </div>
+
+  <div class="status" id="status"></div>
+</div>
+
+<script>
+const dropZone = document.getElementById("dropZone");
+const fileInput = document.getElementById("fileInput");
+let file;
+
+dropZone.addEventListener("click", () => fileInput.click());
+
+fileInput.addEventListener("change", (e) => {
+  file = e.target.files[0];
+  dropZone.innerText = file.name;
+});
+
+dropZone.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  dropZone.classList.add("dragover");
+});
+
+dropZone.addEventListener("dragleave", () => {
+  dropZone.classList.remove("dragover");
+});
+
+dropZone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  file = e.dataTransfer.files[0];
+  dropZone.innerText = file.name;
+});
+
+async function upload() {
+  const email = document.getElementById("email").value;
+  const loader = document.getElementById("loader");
+  const status = document.getElementById("status");
+
+  if (!file || !email) {
+    status.innerText = "⚠️ Please add email and resume";
+    return;
+  }
+
+  loader.style.display = "block";
+  status.innerText = "Processing your resume...";
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("email", email);
+
+  try {
+    const res = await fetch("https://bor12.app.n8n.cloud/webhook/12c2356f-f2ef-4367-9fe0-845fad2551cc", {
+      method: "POST",
+      body: formData
+    });
+
+    loader.style.display = "none";
+    status.innerText = "✅ Jobs sent to your email!";
+  } catch (err) {
+    loader.style.display = "none";
+    status.innerText = "❌ Something went wrong";
+  }
+}
+</script>
+
+</body>
+</html>

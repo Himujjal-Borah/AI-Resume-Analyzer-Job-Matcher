@@ -1,0 +1,239 @@
+{
+  "name": "Resume Analyzer and Job Finder",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "12c2356f-f2ef-4367-9fe0-845fad2551cc",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -320,
+        0
+      ],
+      "id": "7dc28e24-664a-42b8-86b7-f8f32d7cb79f",
+      "name": "Webhook",
+      "webhookId": "12c2356f-f2ef-4367-9fe0-845fad2551cc"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Extract all skills from this resume.\nReturn only comma separated skills.\n\nResume:\n{{$json[\"text\"]}}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        96,
+        0
+      ],
+      "id": "8f755be6-e96c-419d-881e-b9443c14e59c",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -112,
+        0
+      ],
+      "id": "2a5a635b-0ca3-4fad-8ac2-5da8de33b164",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        208
+      ],
+      "id": "3bd1525e-8b3a-469f-a1e3-dede6f76706e",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "pyHPTcyGD8s31tUR",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "169c272c-c612-4561-aca0-8443a481b9c6",
+              "name": "=skills",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        0
+      ],
+      "id": "f4e4c087-84fd-45b7-a68b-3f67b6098fb4",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "url": "https://remotive.com/api/remote-jobs",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        656,
+        0
+      ],
+      "id": "96cf3630-6098-458b-8d77-c2405f51aead",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const skills = $('Edit Fields').first().json.skills.toLowerCase().split(\",\");\nconst jobs = $input.first().json.jobs;\n\nreturn jobs.filter(job => {\n  return skills.some(skill =>\n    job.title.toLowerCase().includes(skill.trim())\n  );\n}).slice(0,5).map(job => ({ json: job }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        0
+      ],
+      "id": "a3ebc525-534f-4750-8cb0-a84538b13eaa",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Webhook').item.json.body.email }}",
+        "subject": "Job Opportunities Matched to Your Profile",
+        "emailType": "text",
+        "message": "=Dear Candidate,\n\nWe hope you are doing well.\n\nBased on your profile and the information provided, we have identified a job opportunity that may be a good match for your skills and experience.\n\nJob Title: {{$json[\"title\"]}}\nCompany: {{$json[\"company_name\"]}}\nApplication Link: {{$json[\"url\"]}}\n\nWe encourage you to review the details and apply if the role aligns with your career goals.\n\nIf you have any questions or need further assistance, please feel free to reach out.\n\nThank you for using our service.\n\nBest regards,\nAI Job Matching System",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1072,
+        0
+      ],
+      "id": "9b214d23-535c-4c87-bca3-7f62e0772c21",
+      "name": "Send a message",
+      "webhookId": "f471439d-00ff-494d-ae3e-1cd5ea8eb012",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "vTFsZp04oMJOMqBw",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "3fefa932-da2a-4ed9-a91c-ea2b39422d15",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "daa623fdeb95a423451a0280636aab8e731648babecc53635c21e003c8789d4b"
+  },
+  "id": "u96c1RtrdYmyAOv0",
+  "tags": []
+}
